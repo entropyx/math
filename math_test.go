@@ -10,7 +10,6 @@ import (
 )
 
 func TestMathFunction(t *testing.T) {
-
 	Convey("Given the following dataset ...", t, func() {
 		var data [][]float64
 		var X [][]float64
@@ -41,19 +40,30 @@ func TestMathFunction(t *testing.T) {
 			X = append(X, data[i][:3])
 		}
 
+		Convey("The Traspose of matrix X ... ", func() {
+			t := Traspose(X)
+			So(len(t[0]), ShouldEqual, len(X))
+		})
+
 		Theta := [][]float64{make([]float64, len(X[0]))}
 		c := make(chan [][]float64)
+		go MatrixProduct(X, Theta, c)
+		prod := <-c
+		prod2 := ParallelMatrixProd(X, Theta)
+
+		var out1 []float64
+		var out2 []float64
+		for i := 0; i < len(X); i++ {
+			out1 = append(out1, prod[i][0])
+			out2 = append(out2, prod2[i][0])
+		}
 
 		Convey("The product between matrix X an Theta ... ", func() {
-			go MatrixProduct(X, Theta, c)
-			prod := <-c
-			So(len(prod), ShouldEqual, len(X))
+			So(out1, ShouldResemble, make([]float64, len(X)))
 		})
 
 		Convey("The parallel product between matrix X an Theta ... ", func() {
-			prod := ParallelMatrixProd(X, Theta)
-			So(len(prod), ShouldEqual, len(X))
+			So(out2, ShouldResemble, make([]float64, len(X)))
 		})
-
 	})
 }
