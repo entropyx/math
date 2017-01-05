@@ -3,7 +3,56 @@ package math
 import (
 	"math"
 	"runtime"
+
+	"github.com/entropyx/tools"
 )
+
+// Mean function
+func Mean(x []float64) float64 {
+	out := 0.00
+	n := len(x)
+	for i := 0; i < n; i++ {
+		out = out + x[i]
+	}
+	out = out / float64(n)
+	return out
+}
+
+// Sd standart desviation function
+func Sd(x []float64) float64 {
+	mu := Mean(x)
+	l := len(x)
+	out := 0.00
+	for i := 0; i < l; i++ {
+		out = out + math.Pow(x[i]-mu, 2)
+	}
+	out = math.Sqrt(out)
+	return out
+}
+
+// Min of vector
+func Min(x []float64) float64 {
+	min := x[0]
+	l := len(x)
+	for i := 0; i < l; i++ {
+		if x[i] < min {
+			min = x[i]
+		}
+	}
+	return min
+}
+
+// Max of vector
+func Max(x []float64) float64 {
+	max := x[0]
+	l := len(x)
+	for i := 0; i < l; i++ {
+		if x[i] > max {
+			max = x[i]
+		}
+	}
+	return max
+}
 
 // Traspose of a matrix
 func Traspose(X [][]float64) (t [][]float64) {
@@ -104,4 +153,55 @@ func ParallelMatrixProd(X, Y [][]float64) (u [][]float64) {
 	}
 	close(c)
 	return u
+}
+
+// Normalize scale data.
+func Normalize(X [][]float64) [][]float64 {
+	l1 := len(X)
+	l2 := len(X[0])
+	mu := tools.Apply(X, 2, Mean)
+	sigma := tools.Apply(X, 2, Sd)
+
+	for i := 0; i < l1; i++ {
+		for j := 0; j < l2; j++ {
+			X[i][j] = (X[i][j] - mu[j]) / sigma[j]
+		}
+	}
+	return X
+}
+
+// MinMax scale data.
+func MinMax(X [][]float64) [][]float64 {
+	l1 := len(X)
+	l2 := len(X[0])
+	min := tools.Apply(X, 2, Min)
+	max := tools.Apply(X, 2, Max)
+
+	for i := 0; i < l1; i++ {
+		for j := 0; j < l2; j++ {
+			X[i][j] = (X[i][j] - min[j]) / (max[j] - min[j])
+		}
+	}
+	return X
+}
+
+// RescaleCoef rescale coefficients fitted.
+func RescaleCoef(theta, mu, sigma []float64) []float64 {
+	l := len(theta)
+	for i := 0; i < l-1; i++ {
+		theta[0] = theta[0] - theta[i+1]*mu[i]/sigma[i]
+		theta[i+1] = theta[i+1] / sigma[i]
+	}
+	return theta
+}
+
+// Round array with some presicion
+func Round(num []float64, precision int) []float64 {
+	var out []float64
+	v1 := math.Pow(10, float64(precision))
+	for i := 0; i < len(num); i++ {
+		v2 := int(num[i]*v1 + math.Copysign(0.5, num[i]*v1))
+		out = append(out, float64(v2)/v1)
+	}
+	return out
 }

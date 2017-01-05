@@ -65,5 +65,15 @@ func TestMathFunction(t *testing.T) {
 		Convey("The parallel product between matrix X an Theta ... ", func() {
 			So(out2, ShouldResemble, make([]float64, len(X)))
 		})
+
+		coef1 := []float64{-25.1613335, 0.2062317, 0.2014716}
+		coef2 := []float64{1.718449, 4.012903, 3.743903}
+		mu := []float64{65.64427, 66.22200}
+		sigma := []float64{19.45822, 18.58278}
+
+		Convey("The rescaling of coef2 shoul be equal to coef1 ", func() {
+			rescale := RescaleCoef(coef2, mu, sigma)
+			So(Round(rescale, 4), ShouldResemble, Round(coef1, 4))
+		})
 	})
 }
