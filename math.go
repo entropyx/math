@@ -109,6 +109,20 @@ func VectorAdd(x, y []float64) []float64 {
 	return add
 }
 
+// MatrixVectorProduct return the product between matrix and vector
+func MatrixVectorProduct(X [][]float64, y []float64, c chan []float64) {
+	var prod []float64
+	l1 := len(X)
+	l2 := len(y)
+	if len(X[0]) != l2 {
+		panic("The product are not defined, dimension error!")
+	}
+	for i := 0; i < l1; i++ {
+		prod = append(prod, VectorProduct(X[i], y))
+	}
+	c <- prod
+}
+
 // MatrixProduct return the product between two matrix
 func MatrixProduct(X, Y [][]float64, c chan [][]float64) {
 	var prod [][]float64
@@ -135,23 +149,26 @@ func ParallelMatrixProd(X, Y [][]float64) (u [][]float64) {
 	}
 	n := runtime.NumCPU()
 	N := int(math.Floor(float64(l1 / n)))
-	c := make(chan [][]float64)
+	//c := make(chan [][]float64)
+	channels := make([]chan [][]float64, n+1)
 	for i := 0; i < n; i++ {
+		channels[i] = make(chan [][]float64)
 		j1 := i * N
 		j2 := (i + 1) * N
-		go MatrixProduct(X[j1:j2], Y, c)
+		go MatrixProduct(X[j1:j2], Y, channels[i])
 	}
 
 	if n*N != l1 {
-		go MatrixProduct(X[(n*N):], Y, c)
+		channels[n] = make(chan [][]float64)
+		go MatrixProduct(X[(n*N):], Y, channels[n])
 		n++
 	}
 
 	for i := 0; i < n; i++ {
-		submatrix := <-c
+		submatrix := <-channels[i]
 		u = append(u, submatrix...)
+		close(channels[i])
 	}
-	close(c)
 	return u
 }
 
